@@ -1,18 +1,22 @@
 {
-	"name": "p-timeout",
+	"name": "@esm2cjs/p-timeout",
 	"version": "6.0.0",
-	"description": "Timeout a promise after a specified amount of time",
+	"description": "Timeout a promise after a specified amount of time. This is a fork of sindresorhus/p-timeout, but with CommonJS support.",
 	"license": "MIT",
-	"repository": "sindresorhus/p-timeout",
-	"funding": "https://github.com/sponsors/sindresorhus",
+	"repository": "esm2cjs/p-timeout",
+	"funding": "https://github.com/sponsors/AlCalzone",
 	"author": {
-		"name": "Sindre Sorhus",
-		"email": "sindresorhus@gmail.com",
-		"url": "https://sindresorhus.com"
+		"name": "Dominic Griesel",
+		"email": "d.griesel@gmx.net"
 	},
-	"type": "module",
-	"exports": "./index.js",
-	"types": "./index.d.ts",
+	"exports": {
+		".": {
+			"import": "./esm/index.js",
+			"require": "./cjs/index.js"
+		},
+		"./package.json": "./package.json"
+	},
+	"types": "esm/index.d.ts",
 	"engines": {
 		"node": ">=14.16"
 	},
@@ -20,8 +24,8 @@
 		"test": "xo && ava && tsd"
 	},
 	"files": [
-		"index.js",
-		"index.d.ts"
+		"cjs/",
+		"esm/"
 	],
 	"keywords": [
 		"promise",
@@ -44,5 +48,30 @@
 		"time-span": "^5.1.0",
 		"tsd": "^0.22.0",
 		"xo": "^0.51.0"
+	},
+	"publishConfig": {
+		"access": "public"
+	},
+	"main": "cjs/index.js",
+	"module": "esm/index.js",
+	"typesVersions": {
+		"*": {
+			"esm/index.d.ts": [
+				"esm/index.d.ts"
+			],
+			"cjs/index.d.ts": [
+				"esm/index.d.ts"
+			],
+			"*": [
+				"esm/*"
+			]
+		}
+	},
+	"xo": {
+		"ignores": [
+			"cjs",
+			"**/*.test-d.ts",
+			"**/*.d.ts"
+		]
 	}
 }

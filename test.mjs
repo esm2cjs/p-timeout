@@ -3,7 +3,7 @@ import delay from 'delay';
 import PCancelable from 'p-cancelable';
 import inRange from 'in-range';
 import timeSpan from 'time-span';
-import pTimeout, {TimeoutError} from './index.js';
+import pTimeout, {TimeoutError} from './esm/index.js';
 
 const fixture = Symbol('fixture');
 const fixtureError = new Error('fixture');
