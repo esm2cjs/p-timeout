@@ -40,13 +40,7 @@ const getAbortedReason = (signal) => {
   const reason = signal.reason === void 0 ? getDOMException("This operation was aborted.") : signal.reason;
   return reason instanceof Error ? reason : getDOMException(reason);
 };
-function pTimeout(promise, options) {
-  const {
-    milliseconds,
-    fallback,
-    message,
-    customTimers = { setTimeout, clearTimeout }
-  } = options;
+function pTimeout(promise, milliseconds, fallback, options) {
   let timer;
   const cancelablePromise = new Promise((resolve, reject) => {
     if (typeof milliseconds !== "number" || Math.sign(milliseconds) !== 1) {
@@ -56,6 +50,10 @@ function pTimeout(promise, options) {
       resolve(promise);
       return;
     }
+    options = {
+      customTimers: { setTimeout, clearTimeout },
+      ...options
+    };
     if (options.signal) {
       const { signal } = options;
       if (signal.aborted) {
@@ -65,8 +63,8 @@ function pTimeout(promise, options) {
         reject(getAbortedReason(signal));
       });
     }
-    timer = customTimers.setTimeout.call(void 0, () => {
-      if (fallback) {
+    timer = options.customTimers.setTimeout.call(void 0, () => {
+      if (typeof fallback === "function") {
         try {
           resolve(fallback());
         } catch (error) {
@@ -74,8 +72,8 @@ function pTimeout(promise, options) {
         }
         return;
       }
-      const errorMessage = typeof message === "string" ? message : `Promise timed out after ${milliseconds} milliseconds`;
-      const timeoutError = message instanceof Error ? message : new TimeoutError(errorMessage);
+      const message = typeof fallback === "string" ? fallback : `Promise timed out after ${milliseconds} milliseconds`;
+      const timeoutError = fallback instanceof Error ? fallback : new TimeoutError(message);
       if (typeof promise.cancel === "function") {
         promise.cancel();
       }
@@ -87,12 +85,12 @@ function pTimeout(promise, options) {
       } catch (error) {
         reject(error);
       } finally {
-        customTimers.clearTimeout.call(void 0, timer);
+        options.customTimers.clearTimeout.call(void 0, timer);
       }
     })();
   });
   cancelablePromise.clear = () => {
-    customTimers.clearTimeout.call(void 0, timer);
+    clearTimeout(timer);
     timer = void 0;
   };
   return cancelablePromise;

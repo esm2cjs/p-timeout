@@ -20,29 +20,22 @@ export class AbortError extends Error {
 /**
 TODO: Remove AbortError and just throw DOMException when targeting Node 18.
 */
-const getDOMException = errorMessage => globalThis.DOMException === undefined
-	? new AbortError(errorMessage)
-	: new DOMException(errorMessage);
+const getDOMException = errorMessage => globalThis.DOMException === undefined ?
+	new AbortError(errorMessage) :
+	new DOMException(errorMessage);
 
 /**
 TODO: Remove below function and just 'reject(signal.reason)' when targeting Node 18.
 */
 const getAbortedReason = signal => {
-	const reason = signal.reason === undefined
-		? getDOMException('This operation was aborted.')
-		: signal.reason;
+	const reason = signal.reason === undefined ?
+		getDOMException('This operation was aborted.') :
+		signal.reason;
 
 	return reason instanceof Error ? reason : getDOMException(reason);
 };
 
-export default function pTimeout(promise, options) {
-	const {
-		milliseconds,
-		fallback,
-		message,
-		customTimers = {setTimeout, clearTimeout},
-	} = options;
-
+export default function pTimeout(promise, milliseconds, fallback, options) {
 	let timer;
 
 	const cancelablePromise = new Promise((resolve, reject) => {
@@ -55,6 +48,11 @@ export default function pTimeout(promise, options) {
 			return;
 		}
 
+		options = {
+			customTimers: {setTimeout, clearTimeout},
+			...options
+		};
+
 		if (options.signal) {
 			const {signal} = options;
 			if (signal.aborted) {
@@ -66,8 +64,8 @@ export default function pTimeout(promise, options) {
 			});
 		}
 
-		timer = customTimers.setTimeout.call(undefined, () => {
-			if (fallback) {
+		timer = options.customTimers.setTimeout.call(undefined, () => {
+			if (typeof fallback === 'function') {
 				try {
 					resolve(fallback());
 				} catch (error) {
@@ -77,8 +75,8 @@ export default function pTimeout(promise, options) {
 				return;
 			}
 
-			const errorMessage = typeof message === 'string' ? message : `Promise timed out after ${milliseconds} milliseconds`;
-			const timeoutError = message instanceof Error ? message : new TimeoutError(errorMessage);
+			const message = typeof fallback === 'string' ? fallback : `Promise timed out after ${milliseconds} milliseconds`;
+			const timeoutError = fallback instanceof Error ? fallback : new TimeoutError(message);
 
 			if (typeof promise.cancel === 'function') {
 				promise.cancel();
@@ -93,13 +91,13 @@ export default function pTimeout(promise, options) {
 			} catch (error) {
 				reject(error);
 			} finally {
-				customTimers.clearTimeout.call(undefined, timer);
+				options.customTimers.clearTimeout.call(undefined, timer);
 			}
 		})();
 	});
 
 	cancelablePromise.clear = () => {
-		customTimers.clearTimeout.call(undefined, timer);
+		clearTimeout(timer);
 		timer = undefined;
 	};
 
