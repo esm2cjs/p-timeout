@@ -66,6 +66,9 @@ export default function pTimeout(promise, options) {
 			});
 		}
 
+		// We create the error outside of `setTimeout` to preserve the stack trace.
+		const timeoutError = new TimeoutError();
+
 		timer = customTimers.setTimeout.call(undefined, () => {
 			if (fallback) {
 				try {
@@ -77,14 +80,18 @@ export default function pTimeout(promise, options) {
 				return;
 			}
 
-			const errorMessage = typeof message === 'string' ? message : `Promise timed out after ${milliseconds} milliseconds`;
-			const timeoutError = message instanceof Error ? message : new TimeoutError(errorMessage);
-
 			if (typeof promise.cancel === 'function') {
 				promise.cancel();
 			}
 
-			reject(timeoutError);
+			if (message === false) {
+				resolve();
+			} else if (message instanceof Error) {
+				reject(message);
+			} else {
+				timeoutError.message = message ?? `Promise timed out after ${milliseconds} milliseconds`;
+				reject(timeoutError);
+			}
 		}, milliseconds);
 
 		(async () => {

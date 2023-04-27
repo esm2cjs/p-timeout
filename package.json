@@ -1,6 +1,6 @@
 {
 	"name": "@esm2cjs/p-timeout",
-	"version": "6.0.0",
+	"version": "6.1.1",
 	"description": "Timeout a promise after a specified amount of time. This is a fork of sindresorhus/p-timeout, but with CommonJS support.",
 	"license": "MIT",
 	"repository": "esm2cjs/p-timeout",
