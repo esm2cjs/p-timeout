@@ -48,13 +48,9 @@ function pTimeout(promise, options) {
     customTimers = { setTimeout, clearTimeout }
   } = options;
   let timer;
-  const cancelablePromise = new Promise((resolve, reject) => {
+  const wrappedPromise = new Promise((resolve, reject) => {
     if (typeof milliseconds !== "number" || Math.sign(milliseconds) !== 1) {
       throw new TypeError(`Expected \`milliseconds\` to be a positive number, got \`${milliseconds}\``);
-    }
-    if (milliseconds === Number.POSITIVE_INFINITY) {
-      resolve(promise);
-      return;
     }
     if (options.signal) {
       const { signal } = options;
@@ -64,6 +60,10 @@ function pTimeout(promise, options) {
       signal.addEventListener("abort", () => {
         reject(getAbortedReason(signal));
       });
+    }
+    if (milliseconds === Number.POSITIVE_INFINITY) {
+      promise.then(resolve, reject);
+      return;
     }
     const timeoutError = new TimeoutError();
     timer = customTimers.setTimeout.call(void 0, () => {
@@ -92,10 +92,11 @@ function pTimeout(promise, options) {
         resolve(await promise);
       } catch (error) {
         reject(error);
-      } finally {
-        customTimers.clearTimeout.call(void 0, timer);
       }
     })();
+  });
+  const cancelablePromise = wrappedPromise.finally(() => {
+    cancelablePromise.clear();
   });
   cancelablePromise.clear = () => {
     customTimers.clearTimeout.call(void 0, timer);
